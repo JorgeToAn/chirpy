@@ -1,12 +1,22 @@
 package main
 
-import "net/http"
+import (
+	"fmt"
+	"log"
+	"net/http"
+)
 
 func main() {
-	handler := http.NewServeMux()
+	const port = "8080"
+	const filepathRoot = "."
+
+	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.Dir(filepathRoot)))
+
 	server := http.Server{
-		Addr:    ":8080",
-		Handler: handler,
+		Addr:    ":" + port,
+		Handler: mux,
 	}
-	server.ListenAndServe()
+	fmt.Printf("Started server at port %s\n", port)
+	log.Fatal(server.ListenAndServe())
 }
