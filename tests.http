@@ -1,0 +1,21 @@
+### Expected: 405 Method Not Allowed
+
+GET http://localhost:8080/api/validate_chirp http/1.1
+
+### Expected: 200 OK
+
+POST http://localhost:8080/api/validate_chirp http/1.1
+Content-Type: application/json
+
+{
+    "body": "it's time to d-d-d-DUEL!!"
+}
+
+### Expected: 400 Bad Request
+
+POST http://localhost:8080/api/validate_chirp http/1.1
+Content-Type: application/json
+
+{
+    "body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus nulla quam, bibendum non laoreet non, ullamcorper mattis elit. Quisque turpis ligula, cursus in lacinia id, condimentum quis mi. Nulla facilisis egestas lacus ut pellentesque. Duis nulla tellus, cursus nec viverra ac, pellentesque at ligula. Interdum et malesuada fames ac ante ipsum primis in faucibus. Quisque risus libero, hendrerit et aliquam in, egestas eget ex. Morbi maximus est purus, eu porta nulla pretium a. Maecenas at feugiat lectus. Integer cursus sapien quis fringilla dignissim. Duis id tortor rutrum, gravida ante et, faucibus massa. Phasellus ullamcorper malesuada enim vitae laoreet. Curabitur consequat consectetur ligula. Nam urna orci, ullamcorper sit amet ipsum id, consectetur ullamcorper erat. Praesent mattis tristique nulla vestibulum ullamcorper. Duis eu arcu non purus pretium congue ut vel diam. Suspendisse ante turpis, iaculis at maximus at, ornare vitae ante. Nunc."
+}
