@@ -17,13 +17,9 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK\n"))
-	})
-	mux.HandleFunc("GET /metrics", apiCfg.handlerMetricsGet)
-	mux.HandleFunc("POST /reset", apiCfg.handlerMetricsReset)
+	mux.HandleFunc("GET /api/healthz", handlerHealth)
+	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetricsGet)
+	mux.HandleFunc("POST /admin/reset", apiCfg.handlerMetricsReset)
 
 	server := http.Server{
 		Addr:    ":" + port,
