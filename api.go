@@ -60,11 +60,12 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	profaneWords := []string{"kerfuffle", "sharbert", "fornax"}
 	type responsePayload struct {
-		Valid bool `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}
 	payload := responsePayload{
-		Valid: true,
+		CleanedBody: replaceWords(params.Body, "****", profaneWords),
 	}
 	respondWithJSON(w, 200, payload)
 }
