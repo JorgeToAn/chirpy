@@ -1,3 +1,6 @@
 # Executables
 out
 out.exe
+
+# Environment variables
+.env
