@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"sync/atomic"
 
 	"github.com/JorgeToAn/chirpy/internal/database"
@@ -21,7 +23,6 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 }
 
 func (cfg *apiConfig) handlerMetricsGet(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	template := `
 	<html>
 	  <body>
@@ -30,13 +31,28 @@ func (cfg *apiConfig) handlerMetricsGet(w http.ResponseWriter, _ *http.Request) 
 	  </body>
 	</html>`
 	hits := cfg.fileserverHits.Load()
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf(template, hits)))
 }
 
-func (cfg *apiConfig) handlerMetricsReset(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+func (cfg *apiConfig) handlerMetricsReset(w http.ResponseWriter, r *http.Request) {
+	platform := os.Getenv("PLATFORM")
+	if platform != "dev" {
+		respondWithError(w, 403, "Forbidden action")
+		return
+	}
+
+	err := cfg.dbQueries.DeleteUsers(r.Context())
+	if err != nil {
+		log.Printf("Error deleting users: %s", err)
+		respondWithError(w, 500, "Couldn't delete users")
+		return
+	}
+
 	cfg.fileserverHits.Store(0)
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Metrics reset OK\n"))
 }
