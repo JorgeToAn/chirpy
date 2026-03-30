@@ -38,34 +38,3 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.WriteHeader(code)
 	w.Write(b)
 }
-
-func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
-	type parameters struct {
-		Body string `json:"body"`
-	}
-
-	const maxLength int = 140
-
-	decoder := json.NewDecoder(r.Body)
-	params := parameters{}
-	err := decoder.Decode(&params)
-	if err != nil {
-		log.Printf("Error decoding parameters: %v", err)
-		respondWithError(w, 500, "Something went wrong")
-		return
-	}
-
-	if len(params.Body) > maxLength {
-		respondWithError(w, 400, "Chirp is too long")
-		return
-	}
-
-	profaneWords := []string{"kerfuffle", "sharbert", "fornax"}
-	type responsePayload struct {
-		CleanedBody string `json:"cleaned_body"`
-	}
-	payload := responsePayload{
-		CleanedBody: replaceWords(params.Body, "****", profaneWords),
-	}
-	respondWithJSON(w, 200, payload)
-}
