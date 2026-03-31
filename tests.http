@@ -1,4 +1,8 @@
-### Create Chirp
+### GET /api/chirps
+GET http://localhost:8080/api/chirps
+
+### POST /api/chirps ###
+
 ### Expected: 201 Created
 
 POST http://localhost:8080/api/chirps http/1.1
@@ -9,7 +13,6 @@ Content-Type: application/json
     "user_id": "8e3bdc37-3160-4203-93a7-1e72f0d1ae3d"
 }
 
-### Create Chirp
 ### Expected: 400 Bad Request
 
 POST http://localhost:8080/api/chirps http/1.1
@@ -20,7 +23,6 @@ Content-Type: application/json
     "user_id": "8e3bdc37-3160-4203-93a7-1e72f0d1ae3d"
 }
 
-### Create Chirp
 ### Expected: 201 Created
 ### Should replace the following words into "****":
 ###    - kerfuffle
@@ -35,7 +37,7 @@ Content-Type: application/json
     "user_id": "8e3bdc37-3160-4203-93a7-1e72f0d1ae3d"
 }
 
-### Create User
+### POST /api/users ###
 
 POST http://localhost:8080/api/users http/1.1
 Content-Type: application/json
@@ -44,6 +46,6 @@ Content-Type: application/json
     "email": "lunk@nientiendo.com"
 }
 
-### Reset
+### POST /admin/reset
 
 POST http://localhost:8080/admin/reset http/1.1
