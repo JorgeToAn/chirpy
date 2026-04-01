@@ -1,6 +1,9 @@
 ### GET /api/chirps
 GET http://localhost:8080/api/chirps
 
+###
+GET http://localhost:8080/api/chirps/c74dde04-aea0-4348-8c1b-ba30398d8502
+
 ### POST /api/chirps ###
 
 ### Expected: 201 Created
