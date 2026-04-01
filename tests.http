@@ -50,6 +50,15 @@ Content-Type: application/json
     "password": "pa$$w0rd"
 }
 
+### POST /api/login
+POST http://localhost:8080/api/login http/1.1
+Content-Type: application/json
+
+{
+    "email": "lunk@nientiendo.com",
+    "password": "pa$$w0rd"
+}
+
 ### POST /admin/reset
 
 POST http://localhost:8080/admin/reset http/1.1
