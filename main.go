@@ -25,9 +25,15 @@ func main() {
 		log.Fatalf("unable to connect to database: %s", err)
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("missing JWT_SECRET environment variable")
+	}
+
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
 		dbQueries:      database.New(db),
+		jwtSecret:      jwtSecret,
 	}
 
 	mux := http.NewServeMux()

@@ -18,6 +18,13 @@ type User struct {
 	Email     string    `json:"email"`
 }
 
+type LoginResponse struct {
+	User
+	Token string `json:"token"`
+}
+
+const defaultTokenExpiration = time.Hour
+
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Email    string `json:"email"`
@@ -73,8 +80,9 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email            string `json:"email"`
+		Password         string `json:"password"`
+		ExpiresInSeconds int    `json:"expires_in_seconds"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -103,11 +111,26 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := User{
-		ID:        dbUser.ID,
-		CreatedAt: dbUser.CreatedAt,
-		UpdatedAt: dbUser.UpdatedAt,
-		Email:     dbUser.Email,
+	expiresIn := time.Duration(params.ExpiresInSeconds) * time.Second
+	if expiresIn.Seconds() == 0 || expiresIn > defaultTokenExpiration {
+		expiresIn = defaultTokenExpiration
+	}
+
+	token, err := auth.MakeJWT(dbUser.ID, cfg.jwtSecret, expiresIn)
+	if err != nil {
+		log.Printf("Error making JWT: %s", err)
+		respondWithError(w, 500, "Something went wrong")
+		return
+	}
+
+	user := LoginResponse{
+		User: User{
+			ID:        dbUser.ID,
+			CreatedAt: dbUser.CreatedAt,
+			UpdatedAt: dbUser.UpdatedAt,
+			Email:     dbUser.Email,
+		},
+		Token: token,
 	}
 
 	respondWithJSON(w, 200, user)
