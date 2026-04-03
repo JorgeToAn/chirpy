@@ -8,6 +8,7 @@ import (
 	"os"
 	"sync/atomic"
 
+	"github.com/JorgeToAn/chirpy/api"
 	"github.com/JorgeToAn/chirpy/internal/database"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -30,30 +31,30 @@ func main() {
 		log.Fatal("missing JWT_SECRET environment variable")
 	}
 
-	apiCfg := apiConfig{
-		fileserverHits: atomic.Int32{},
-		dbQueries:      database.New(db),
-		jwtSecret:      jwtSecret,
+	apiCfg := api.ApiConfig{
+		FileserverHits: atomic.Int32{},
+		DBQueries:      database.New(db),
+		JWTSecret:      jwtSecret,
 	}
 
 	mux := http.NewServeMux()
 
 	// FILE SERVER
-	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
+	mux.Handle("/app/", apiCfg.MiddlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
 
 	// API
-	mux.HandleFunc("GET /api/healthz", handlerHealth)
+	mux.HandleFunc("GET /api/healthz", api.HandlerHealth)
 
-	mux.HandleFunc("GET /api/chirps/{id}", apiCfg.handlerGetChirp)
-	mux.HandleFunc("GET /api/chirps", apiCfg.handlerGetAllChirps)
-	mux.HandleFunc("POST /api/chirps", apiCfg.handlerCreateChirp)
+	mux.HandleFunc("GET /api/chirps/{id}", apiCfg.HandlerGetChirp)
+	mux.HandleFunc("GET /api/chirps", apiCfg.HandlerGetAllChirps)
+	mux.HandleFunc("POST /api/chirps", apiCfg.HandlerCreateChirp)
 
-	mux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
-	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
+	mux.HandleFunc("POST /api/login", apiCfg.HandlerLogin)
+	mux.HandleFunc("POST /api/users", apiCfg.HandlerCreateUser)
 
 	// ADMIN
-	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetricsGet)
-	mux.HandleFunc("POST /admin/reset", apiCfg.handlerMetricsReset)
+	mux.HandleFunc("GET /admin/metrics", apiCfg.HandlerMetricsGet)
+	mux.HandleFunc("POST /admin/reset", apiCfg.HandlerMetricsReset)
 
 	server := http.Server{
 		Addr:    ":" + port,

@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -19,14 +19,14 @@ type Chirp struct {
 	UserID    uuid.UUID `json:"user_id"`
 }
 
-func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
+func (cfg *ApiConfig) HandlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, 401, "Unauthorized")
 		return
 	}
 
-	userID, err := auth.ValidateJWT(token, cfg.jwtSecret)
+	userID, err := auth.ValidateJWT(token, cfg.JWTSecret)
 	if err != nil {
 		respondWithError(w, 401, "Unauthorized")
 		return
@@ -54,7 +54,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 
 	profaneWords := []string{"kerfuffle", "sharbert", "fornax"}
 
-	dbChirp, err := cfg.dbQueries.CreateChirp(r.Context(), database.CreateChirpParams{
+	dbChirp, err := cfg.DBQueries.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   replaceWords(params.Body, "****", profaneWords),
 		UserID: userID,
 	})
@@ -75,8 +75,8 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	respondWithJSON(w, 201, chirp)
 }
 
-func (cfg *apiConfig) handlerGetAllChirps(w http.ResponseWriter, r *http.Request) {
-	dbChirps, err := cfg.dbQueries.GetChirps(r.Context())
+func (cfg *ApiConfig) HandlerGetAllChirps(w http.ResponseWriter, r *http.Request) {
+	dbChirps, err := cfg.DBQueries.GetChirps(r.Context())
 	if err != nil {
 		log.Printf("Error getting chirps: %s", err)
 		respondWithError(w, 500, "Something went wrong")
@@ -98,7 +98,7 @@ func (cfg *apiConfig) handlerGetAllChirps(w http.ResponseWriter, r *http.Request
 	respondWithJSON(w, 200, chirps)
 }
 
-func (cfg *apiConfig) handlerGetChirp(w http.ResponseWriter, r *http.Request) {
+func (cfg *ApiConfig) HandlerGetChirp(w http.ResponseWriter, r *http.Request) {
 	chirpID, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
 		log.Printf("Error parsing chirp ID: %s", err)
@@ -106,7 +106,7 @@ func (cfg *apiConfig) handlerGetChirp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbChirp, err := cfg.dbQueries.GetChirp(r.Context(), chirpID)
+	dbChirp, err := cfg.DBQueries.GetChirp(r.Context(), chirpID)
 	if err != nil {
 		respondWithError(w, 404, "Not found")
 		return

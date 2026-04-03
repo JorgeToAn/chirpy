@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"fmt"
@@ -10,20 +10,20 @@ import (
 	"github.com/JorgeToAn/chirpy/internal/database"
 )
 
-type apiConfig struct {
-	fileserverHits atomic.Int32
-	dbQueries      *database.Queries
-	jwtSecret      string
+type ApiConfig struct {
+	FileserverHits atomic.Int32
+	DBQueries      *database.Queries
+	JWTSecret      string
 }
 
-func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
+func (cfg *ApiConfig) MiddlewareMetricsInc(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cfg.fileserverHits.Add(1)
+		cfg.FileserverHits.Add(1)
 		next.ServeHTTP(w, r)
 	})
 }
 
-func (cfg *apiConfig) handlerMetricsGet(w http.ResponseWriter, _ *http.Request) {
+func (cfg *ApiConfig) HandlerMetricsGet(w http.ResponseWriter, _ *http.Request) {
 	template := `
 	<html>
 	  <body>
@@ -31,27 +31,27 @@ func (cfg *apiConfig) handlerMetricsGet(w http.ResponseWriter, _ *http.Request) 
 		<p>Chirpy has been visited %d times!</p>
 	  </body>
 	</html>`
-	hits := cfg.fileserverHits.Load()
+	hits := cfg.FileserverHits.Load()
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf(template, hits)))
 }
 
-func (cfg *apiConfig) handlerMetricsReset(w http.ResponseWriter, r *http.Request) {
+func (cfg *ApiConfig) HandlerMetricsReset(w http.ResponseWriter, r *http.Request) {
 	platform := os.Getenv("PLATFORM")
 	if platform != "dev" {
 		respondWithError(w, 403, "Forbidden action")
 		return
 	}
 
-	err := cfg.dbQueries.DeleteUsers(r.Context())
+	err := cfg.DBQueries.DeleteUsers(r.Context())
 	if err != nil {
 		log.Printf("Error deleting users: %s", err)
 		respondWithError(w, 500, "Couldn't delete users")
 		return
 	}
 
-	cfg.fileserverHits.Store(0)
+	cfg.FileserverHits.Store(0)
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
