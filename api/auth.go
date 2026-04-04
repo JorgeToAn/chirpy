@@ -10,6 +10,9 @@ import (
 	"github.com/JorgeToAn/chirpy/internal/database"
 )
 
+const defaultTokenExpiration = time.Hour
+const refreshTokenExpiration = time.Hour * 24 * 60 // 60 days
+
 func (cfg *ApiConfig) HandlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Email            string `json:"email"`
@@ -81,4 +84,38 @@ func (cfg *ApiConfig) HandlerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, 200, user)
+}
+
+func (cfg *ApiConfig) HandlerRefresh(w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, 401, "Unauthorized")
+		return
+	}
+
+	dbToken, err := cfg.DBQueries.GetRefreshToken(r.Context(), token)
+	revoked := dbToken.RevokedAt.Valid
+	expired := time.Now().After(dbToken.ExpiresAt)
+	if err != nil || revoked || expired {
+		respondWithError(w, 401, "Unauthorized")
+		return
+	}
+
+	dbUser, err := cfg.DBQueries.GetUserFromRefreshToken(r.Context(), token)
+	if err != nil {
+		log.Printf("Error finding user from refresh token: %s", err)
+		respondWithError(w, 401, "Unauthorized")
+		return
+	}
+
+	accessToken, err := auth.MakeJWT(dbUser.ID, cfg.JWTSecret, defaultTokenExpiration)
+	if err != nil {
+		log.Printf("Error making access token: %s", err)
+		respondWithError(w, 500, "Something went wrong")
+		return
+	}
+
+	respondWithJSON(w, 200, RefreshResponse{
+		Token: accessToken,
+	})
 }

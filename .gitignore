@@ -4,3 +4,6 @@ out.exe
 
 # Environment variables
 .env
+
+# Local HTTP tests
+*.http

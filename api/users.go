@@ -4,14 +4,10 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/JorgeToAn/chirpy/internal/auth"
 	"github.com/JorgeToAn/chirpy/internal/database"
 )
-
-const defaultTokenExpiration = time.Hour
-const refreshTokenExpiration = time.Hour * 24 * 60 // 60 days
 
 func (cfg *ApiConfig) HandlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
