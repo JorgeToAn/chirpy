@@ -25,24 +25,24 @@ func (cfg *ApiConfig) HandlerLogin(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&params)
 	if err != nil {
 		log.Printf("Error decoding parameters: %s", err)
-		respondWithError(w, 500, "Something went wrong")
+		respondWithError(w, 500, ErrorGeneric.String())
 		return
 	}
 
 	dbUser, err := cfg.DBQueries.GetUserByEmail(r.Context(), params.Email)
 	if err != nil {
-		respondWithError(w, 401, "Incorrect email or password")
+		respondWithError(w, 401, ErrorBadCredentials.String())
 		return
 	}
 
 	match, err := auth.CheckPasswordHash(params.Password, dbUser.HashedPassword)
 	if err != nil {
 		log.Printf("Error checking password hash: %s", err)
-		respondWithError(w, 401, "Incorrect email or password")
+		respondWithError(w, 401, ErrorBadCredentials.String())
 		return
 	}
 	if !match {
-		respondWithError(w, 401, "Incorrect email or password")
+		respondWithError(w, 401, ErrorBadCredentials.String())
 		return
 	}
 
@@ -54,7 +54,7 @@ func (cfg *ApiConfig) HandlerLogin(w http.ResponseWriter, r *http.Request) {
 	token, err := auth.MakeJWT(dbUser.ID, cfg.JWTSecret, expiresIn)
 	if err != nil {
 		log.Printf("Error making JWT: %s", err)
-		respondWithError(w, 500, "Something went wrong")
+		respondWithError(w, 500, ErrorGeneric.String())
 		return
 	}
 
@@ -68,7 +68,7 @@ func (cfg *ApiConfig) HandlerLogin(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		log.Printf("Error making refresh token: %s", err)
-		respondWithError(w, 500, "Something went wrong")
+		respondWithError(w, 500, ErrorGeneric.String())
 		return
 	}
 
@@ -89,7 +89,7 @@ func (cfg *ApiConfig) HandlerLogin(w http.ResponseWriter, r *http.Request) {
 func (cfg *ApiConfig) HandlerRefresh(w http.ResponseWriter, r *http.Request) {
 	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
-		respondWithError(w, 401, "Unauthorized")
+		respondWithError(w, 401, ErrorUnauthorized.String())
 		return
 	}
 
@@ -97,21 +97,21 @@ func (cfg *ApiConfig) HandlerRefresh(w http.ResponseWriter, r *http.Request) {
 	revoked := dbToken.RevokedAt.Valid
 	expired := time.Now().After(dbToken.ExpiresAt)
 	if err != nil || revoked || expired {
-		respondWithError(w, 401, "Unauthorized")
+		respondWithError(w, 401, ErrorUnauthorized.String())
 		return
 	}
 
 	dbUser, err := cfg.DBQueries.GetUserFromRefreshToken(r.Context(), token)
 	if err != nil {
 		log.Printf("Error finding user from refresh token: %s", err)
-		respondWithError(w, 401, "Unauthorized")
+		respondWithError(w, 401, ErrorUnauthorized.String())
 		return
 	}
 
 	accessToken, err := auth.MakeJWT(dbUser.ID, cfg.JWTSecret, defaultTokenExpiration)
 	if err != nil {
 		log.Printf("Error making access token: %s", err)
-		respondWithError(w, 500, "Something went wrong")
+		respondWithError(w, 500, ErrorGeneric.String())
 		return
 	}
 
@@ -123,14 +123,14 @@ func (cfg *ApiConfig) HandlerRefresh(w http.ResponseWriter, r *http.Request) {
 func (cfg *ApiConfig) HandlerRevoke(w http.ResponseWriter, r *http.Request) {
 	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
-		respondWithError(w, 401, "Unauthorized")
+		respondWithError(w, 401, ErrorUnauthorized.String())
 		return
 	}
 
 	err = cfg.DBQueries.RevokeRefreshToken(r.Context(), token)
 	if err != nil {
 		log.Printf("Error revoking refresh token: %s", err)
-		respondWithError(w, 500, "Something went wrong")
+		respondWithError(w, 500, ErrorGeneric.String())
 		return
 	}
 

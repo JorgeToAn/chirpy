@@ -13,13 +13,13 @@ import (
 func (cfg *ApiConfig) HandlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
-		respondWithError(w, 401, "Unauthorized")
+		respondWithError(w, 401, ErrorUnauthorized.String())
 		return
 	}
 
 	userID, err := auth.ValidateJWT(token, cfg.JWTSecret)
 	if err != nil {
-		respondWithError(w, 401, "Unauthorized")
+		respondWithError(w, 401, ErrorUnauthorized.String())
 		return
 	}
 
@@ -34,7 +34,7 @@ func (cfg *ApiConfig) HandlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	err = decoder.Decode(&params)
 	if err != nil {
 		log.Printf("Error decoding parameters: %v", err)
-		respondWithError(w, 500, "Something went wrong")
+		respondWithError(w, 500, ErrorGeneric.String())
 		return
 	}
 
@@ -51,7 +51,7 @@ func (cfg *ApiConfig) HandlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	})
 	if err != nil {
 		log.Printf("Error creating chirp: %s", err)
-		respondWithError(w, 500, "Something went wrong")
+		respondWithError(w, 500, ErrorGeneric.String())
 		return
 	}
 
@@ -70,7 +70,7 @@ func (cfg *ApiConfig) HandlerGetAllChirps(w http.ResponseWriter, r *http.Request
 	dbChirps, err := cfg.DBQueries.GetChirps(r.Context())
 	if err != nil {
 		log.Printf("Error getting chirps: %s", err)
-		respondWithError(w, 500, "Something went wrong")
+		respondWithError(w, 500, ErrorGeneric.String())
 		return
 	}
 
@@ -93,7 +93,7 @@ func (cfg *ApiConfig) HandlerGetChirp(w http.ResponseWriter, r *http.Request) {
 	chirpID, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
 		log.Printf("Error parsing chirp ID: %s", err)
-		respondWithError(w, 500, "Something went wrong")
+		respondWithError(w, 500, ErrorGeneric.String())
 		return
 	}
 

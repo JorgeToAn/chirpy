@@ -20,7 +20,7 @@ func (cfg *ApiConfig) HandlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	err := decoder.Decode(&params)
 	if err != nil {
 		log.Printf("Error decoding parameters: %s", err)
-		respondWithError(w, 500, "Something went wrong")
+		respondWithError(w, 500, ErrorGeneric.String())
 		return
 	}
 
@@ -36,7 +36,7 @@ func (cfg *ApiConfig) HandlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
 		log.Printf("Error hashing password: %s", err)
-		respondWithError(w, 500, "Something went wrong")
+		respondWithError(w, 500, ErrorGeneric.String())
 		return
 	}
 
