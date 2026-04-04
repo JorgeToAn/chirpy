@@ -4,20 +4,11 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/JorgeToAn/chirpy/internal/auth"
 	"github.com/JorgeToAn/chirpy/internal/database"
 	"github.com/google/uuid"
 )
-
-type Chirp struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Body      string    `json:"body"`
-	UserID    uuid.UUID `json:"user_id"`
-}
 
 func (cfg *ApiConfig) HandlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	token, err := auth.GetBearerToken(r.Header)
