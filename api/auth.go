@@ -119,3 +119,20 @@ func (cfg *ApiConfig) HandlerRefresh(w http.ResponseWriter, r *http.Request) {
 		Token: accessToken,
 	})
 }
+
+func (cfg *ApiConfig) HandlerRevoke(w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, 401, "Unauthorized")
+		return
+	}
+
+	err = cfg.DBQueries.RevokeRefreshToken(r.Context(), token)
+	if err != nil {
+		log.Printf("Error revoking refresh token: %s", err)
+		respondWithError(w, 500, "Something went wrong")
+		return
+	}
+
+	w.WriteHeader(204)
+}
