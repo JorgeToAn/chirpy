@@ -61,3 +61,70 @@ func (cfg *ApiConfig) HandlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	}
 	respondWithJSON(w, 201, user)
 }
+
+func (cfg *ApiConfig) HandlerUpdateUser(w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, 401, ErrorUnauthorized.String())
+		return
+	}
+
+	userID, err := auth.ValidateJWT(token, cfg.JWTSecret)
+	if err != nil {
+		respondWithError(w, 401, ErrorUnauthorized.String())
+		return
+	}
+
+	type parameters struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	params := parameters{}
+
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&params)
+	if err != nil {
+		log.Printf("Error decoding parameters: %s", err)
+		respondWithError(w, 500, ErrorGeneric.String())
+		return
+	}
+
+	if params.Email == "" {
+		respondWithError(w, 400, "Email is required")
+		return
+	}
+
+	if params.Password == "" {
+		respondWithError(w, 400, "Password is required")
+		return
+	}
+
+	hashedPassword, err := auth.HashPassword(params.Password)
+	if err != nil {
+		log.Printf("Error hashing password: %s", err)
+		respondWithError(w, 500, ErrorGeneric.String())
+		return
+	}
+
+	dbUser, err := cfg.DBQueries.UpdateUserCredentials(
+		r.Context(),
+		database.UpdateUserCredentialsParams{
+			ID:             userID,
+			Email:          params.Email,
+			HashedPassword: hashedPassword,
+		},
+	)
+	if err != nil {
+		log.Printf("Error updating user credentials: %s", err)
+		respondWithError(w, 500, ErrorGeneric.String())
+		return
+	}
+
+	user := User{
+		ID:        dbUser.ID,
+		CreatedAt: dbUser.CreatedAt,
+		UpdatedAt: dbUser.UpdatedAt,
+		Email:     dbUser.Email,
+	}
+	respondWithJSON(w, 200, user)
+}
