@@ -13,13 +13,13 @@ import (
 func (cfg *ApiConfig) HandlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
-		respondWithError(w, 401, ErrorUnauthorized.String())
+		respondWithError(w, http.StatusUnauthorized, ErrorUnauthorized.String())
 		return
 	}
 
 	userID, err := auth.ValidateJWT(token, cfg.JWTSecret)
 	if err != nil {
-		respondWithError(w, 401, ErrorUnauthorized.String())
+		respondWithError(w, http.StatusUnauthorized, ErrorUnauthorized.String())
 		return
 	}
 
@@ -34,12 +34,12 @@ func (cfg *ApiConfig) HandlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	err = decoder.Decode(&params)
 	if err != nil {
 		log.Printf("Error decoding parameters: %v", err)
-		respondWithError(w, 500, ErrorGeneric.String())
+		respondWithError(w, http.StatusInternalServerError, ErrorGeneric.String())
 		return
 	}
 
 	if len(params.Body) > maxLength {
-		respondWithError(w, 400, "Chirp is too long")
+		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
 		return
 	}
 
@@ -51,7 +51,7 @@ func (cfg *ApiConfig) HandlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	})
 	if err != nil {
 		log.Printf("Error creating chirp: %s", err)
-		respondWithError(w, 500, ErrorGeneric.String())
+		respondWithError(w, http.StatusInternalServerError, ErrorGeneric.String())
 		return
 	}
 
@@ -63,14 +63,14 @@ func (cfg *ApiConfig) HandlerCreateChirp(w http.ResponseWriter, r *http.Request)
 		UserID:    dbChirp.UserID,
 	}
 
-	respondWithJSON(w, 201, chirp)
+	respondWithJSON(w, http.StatusCreated, chirp)
 }
 
 func (cfg *ApiConfig) HandlerGetAllChirps(w http.ResponseWriter, r *http.Request) {
 	dbChirps, err := cfg.DBQueries.GetChirps(r.Context())
 	if err != nil {
 		log.Printf("Error getting chirps: %s", err)
-		respondWithError(w, 500, ErrorGeneric.String())
+		respondWithError(w, http.StatusInternalServerError, ErrorGeneric.String())
 		return
 	}
 
@@ -86,20 +86,20 @@ func (cfg *ApiConfig) HandlerGetAllChirps(w http.ResponseWriter, r *http.Request
 		chirps = append(chirps, chirp)
 	}
 
-	respondWithJSON(w, 200, chirps)
+	respondWithJSON(w, http.StatusOK, chirps)
 }
 
 func (cfg *ApiConfig) HandlerGetChirp(w http.ResponseWriter, r *http.Request) {
 	chirpID, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
 		log.Printf("Error parsing chirp ID: %s", err)
-		respondWithError(w, 500, ErrorGeneric.String())
+		respondWithError(w, http.StatusInternalServerError, ErrorGeneric.String())
 		return
 	}
 
 	dbChirp, err := cfg.DBQueries.GetChirp(r.Context(), chirpID)
 	if err != nil {
-		respondWithError(w, 404, "Not found")
+		respondWithError(w, http.StatusNotFound, "Not found")
 		return
 	}
 
@@ -110,5 +110,48 @@ func (cfg *ApiConfig) HandlerGetChirp(w http.ResponseWriter, r *http.Request) {
 		Body:      dbChirp.Body,
 		UserID:    dbChirp.UserID,
 	}
-	respondWithJSON(w, 200, chirp)
+	respondWithJSON(w, http.StatusOK, chirp)
+}
+
+func (cfg *ApiConfig) HandlerDeleteChirp(w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, ErrorUnauthorized.String())
+		return
+	}
+
+	userID, err := auth.ValidateJWT(token, cfg.JWTSecret)
+	if err != nil {
+		log.Printf("Error validating access token: %s", err)
+		respondWithError(w, http.StatusUnauthorized, ErrorUnauthorized.String())
+		return
+	}
+
+	chirpIDString := r.PathValue("chirpID")
+	chirpID, err := uuid.Parse(chirpIDString)
+	if err != nil {
+		log.Printf("Error parsing UUID: %s", err)
+		respondWithError(w, http.StatusInternalServerError, ErrorGeneric.String())
+		return
+	}
+
+	dbChirp, err := cfg.DBQueries.GetChirp(r.Context(), chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "Not Found")
+		return
+	}
+
+	if userID != dbChirp.UserID {
+		respondWithError(w, http.StatusForbidden, ErrorForbidden.String())
+		return
+	}
+
+	err = cfg.DBQueries.DeleteChirp(r.Context(), chirpID)
+	if err != nil {
+		log.Printf("Error deleting chirp: %s", err)
+		respondWithError(w, http.StatusInternalServerError, ErrorGeneric.String())
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

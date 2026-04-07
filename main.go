@@ -48,10 +48,12 @@ func main() {
 	mux.HandleFunc("GET /api/chirps/{id}", apiCfg.HandlerGetChirp)
 	mux.HandleFunc("GET /api/chirps", apiCfg.HandlerGetAllChirps)
 	mux.HandleFunc("POST /api/chirps", apiCfg.HandlerCreateChirp)
+	mux.HandleFunc("DELETE /api/chirps/{chirpID}", apiCfg.HandlerDeleteChirp)
 
 	mux.HandleFunc("POST /api/login", apiCfg.HandlerLogin)
 	mux.HandleFunc("POST /api/refresh", apiCfg.HandlerRefresh)
 	mux.HandleFunc("POST /api/revoke", apiCfg.HandlerRevoke)
+
 	mux.HandleFunc("POST /api/users", apiCfg.HandlerCreateUser)
 	mux.HandleFunc("PUT /api/users", apiCfg.HandlerUpdateUser)
 
