@@ -20,23 +20,23 @@ func (cfg *ApiConfig) HandlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	err := decoder.Decode(&params)
 	if err != nil {
 		log.Printf("Error decoding parameters: %s", err)
-		respondWithError(w, 500, ErrorGeneric.String())
+		respondWithError(w, http.StatusInternalServerError, ErrorGeneric.String())
 		return
 	}
 
 	if params.Email == "" {
-		respondWithError(w, 400, "Email is required")
+		respondWithError(w, http.StatusBadRequest, "Email is required")
 		return
 	}
 	if params.Password == "" {
-		respondWithError(w, 400, "Password is required")
+		respondWithError(w, http.StatusBadRequest, "Password is required")
 		return
 	}
 
 	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
 		log.Printf("Error hashing password: %s", err)
-		respondWithError(w, 500, ErrorGeneric.String())
+		respondWithError(w, http.StatusInternalServerError, ErrorGeneric.String())
 		return
 	}
 
@@ -49,7 +49,7 @@ func (cfg *ApiConfig) HandlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	)
 	if err != nil {
 		log.Printf("Error creating user: %s", err)
-		respondWithError(w, 500, "Unable to create user")
+		respondWithError(w, http.StatusInternalServerError, "Unable to create user")
 		return
 	}
 
@@ -59,19 +59,19 @@ func (cfg *ApiConfig) HandlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		UpdatedAt: dbUser.UpdatedAt,
 		Email:     dbUser.Email,
 	}
-	respondWithJSON(w, 201, user)
+	respondWithJSON(w, http.StatusCreated, user)
 }
 
 func (cfg *ApiConfig) HandlerUpdateUser(w http.ResponseWriter, r *http.Request) {
 	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
-		respondWithError(w, 401, ErrorUnauthorized.String())
+		respondWithError(w, http.StatusUnauthorized, ErrorUnauthorized.String())
 		return
 	}
 
 	userID, err := auth.ValidateJWT(token, cfg.JWTSecret)
 	if err != nil {
-		respondWithError(w, 401, ErrorUnauthorized.String())
+		respondWithError(w, http.StatusUnauthorized, ErrorUnauthorized.String())
 		return
 	}
 
@@ -85,24 +85,24 @@ func (cfg *ApiConfig) HandlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 	err = decoder.Decode(&params)
 	if err != nil {
 		log.Printf("Error decoding parameters: %s", err)
-		respondWithError(w, 500, ErrorGeneric.String())
+		respondWithError(w, http.StatusInternalServerError, ErrorGeneric.String())
 		return
 	}
 
 	if params.Email == "" {
-		respondWithError(w, 400, "Email is required")
+		respondWithError(w, http.StatusBadRequest, "Email is required")
 		return
 	}
 
 	if params.Password == "" {
-		respondWithError(w, 400, "Password is required")
+		respondWithError(w, http.StatusBadRequest, "Password is required")
 		return
 	}
 
 	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
 		log.Printf("Error hashing password: %s", err)
-		respondWithError(w, 500, ErrorGeneric.String())
+		respondWithError(w, http.StatusInternalServerError, ErrorGeneric.String())
 		return
 	}
 
@@ -116,7 +116,7 @@ func (cfg *ApiConfig) HandlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 	)
 	if err != nil {
 		log.Printf("Error updating user credentials: %s", err)
-		respondWithError(w, 500, ErrorGeneric.String())
+		respondWithError(w, http.StatusInternalServerError, ErrorGeneric.String())
 		return
 	}
 
@@ -126,5 +126,5 @@ func (cfg *ApiConfig) HandlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 		UpdatedAt: dbUser.UpdatedAt,
 		Email:     dbUser.Email,
 	}
-	respondWithJSON(w, 200, user)
+	respondWithJSON(w, http.StatusOK, user)
 }
