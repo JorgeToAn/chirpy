@@ -31,10 +31,16 @@ func main() {
 		log.Fatal("missing JWT_SECRET environment variable")
 	}
 
+	polkaKey := os.Getenv("POLKA_KEY")
+	if polkaKey == "" {
+		log.Fatal("missing POLKA_KEY environment variable")
+	}
+
 	apiCfg := api.ApiConfig{
 		FileserverHits: atomic.Int32{},
 		DBQueries:      database.New(db),
 		JWTSecret:      jwtSecret,
+		PolkaKey:       polkaKey,
 	}
 
 	mux := http.NewServeMux()
