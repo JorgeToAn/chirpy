@@ -67,7 +67,19 @@ func (cfg *ApiConfig) HandlerCreateChirp(w http.ResponseWriter, r *http.Request)
 }
 
 func (cfg *ApiConfig) HandlerGetAllChirps(w http.ResponseWriter, r *http.Request) {
-	dbChirps, err := cfg.DBQueries.GetChirps(r.Context())
+	var dbChirps []database.Chirp
+
+	authorID, err := authorIDFromRequest(r)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Author ID is invalid")
+		return
+	}
+
+	if authorID != uuid.Nil {
+		dbChirps, err = cfg.DBQueries.GetChirpsByAuthor(r.Context(), authorID)
+	} else {
+		dbChirps, err = cfg.DBQueries.GetChirps(r.Context())
+	}
 	if err != nil {
 		log.Printf("Error getting chirps: %s", err)
 		respondWithError(w, http.StatusInternalServerError, ErrorGeneric.String())
@@ -154,4 +166,18 @@ func (cfg *ApiConfig) HandlerDeleteChirp(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func authorIDFromRequest(r *http.Request) (uuid.UUID, error) {
+	authorIDString := r.URL.Query().Get("author_id")
+	if authorIDString == "" {
+		return uuid.Nil, nil
+	}
+
+	authorID, err := uuid.Parse(authorIDString)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return authorID, nil
 }
