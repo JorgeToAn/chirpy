@@ -2,8 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"sort"
 
 	"github.com/JorgeToAn/chirpy/internal/auth"
 	"github.com/JorgeToAn/chirpy/internal/database"
@@ -75,6 +77,12 @@ func (cfg *ApiConfig) HandlerGetAllChirps(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	sorting, err := sortingFromRequest(r)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Sort is invalid")
+		return
+	}
+
 	if authorID != uuid.Nil {
 		dbChirps, err = cfg.DBQueries.GetChirpsByAuthor(r.Context(), authorID)
 	} else {
@@ -84,6 +92,12 @@ func (cfg *ApiConfig) HandlerGetAllChirps(w http.ResponseWriter, r *http.Request
 		log.Printf("Error getting chirps: %s", err)
 		respondWithError(w, http.StatusInternalServerError, ErrorGeneric.String())
 		return
+	}
+
+	if sorting == "desc" {
+		sort.Slice(dbChirps, func(i, j int) bool {
+			return dbChirps[i].CreatedAt.After(dbChirps[j].CreatedAt)
+		})
 	}
 
 	chirps := []Chirp{}
@@ -180,4 +194,15 @@ func authorIDFromRequest(r *http.Request) (uuid.UUID, error) {
 	}
 
 	return authorID, nil
+}
+
+func sortingFromRequest(r *http.Request) (string, error) {
+	sorting := r.URL.Query().Get("sort")
+	if sorting == "" {
+		return "asc", nil
+	}
+	if sorting != "asc" && sorting != "desc" {
+		return "", fmt.Errorf("invalid sorting value: %s", sorting)
+	}
+	return sorting, nil
 }
